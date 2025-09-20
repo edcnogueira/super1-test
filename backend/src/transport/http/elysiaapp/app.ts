@@ -1,6 +1,6 @@
 import { swagger } from "@elysiajs/swagger";
 import Elysia from "elysia";
-import { type AppConfig, loadConfig } from "@/config/config.ts";
+import type { AppConfig } from "@/config/config.ts";
 import { logger } from "../middlewares/logger";
 import { registerRoutes } from "./routes";
 
@@ -52,14 +52,4 @@ export function createApp(_: AppConfig) {
 	registerRoutes(app);
 
 	return app;
-}
-
-export function start() {
-	const config = loadConfig();
-	const app = createApp(config);
-	const server = app.listen(config.httpPort);
-	console.info(
-		`HTTP listening on http://localhost:${config.httpPort} (env=${config.appEnv})`,
-	);
-	return server;
 }

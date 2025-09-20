@@ -1,12 +1,12 @@
+import { env } from "./env.ts";
+
 export type AppConfig = {
 	appEnv: string;
 	httpPort: number;
 	logLevel: "debug" | "info" | "warn" | "error";
 };
 
-export function loadConfig(
-	env: Record<string, string | undefined> = process.env,
-): AppConfig {
+export function loadConfig(): AppConfig {
 	const parseNumber = (value: string | undefined, fallback: number) => {
 		const n = Number(value);
 		return Number.isFinite(n) ? n : fallback;

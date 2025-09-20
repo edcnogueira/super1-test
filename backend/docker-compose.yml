@@ -1,0 +1,10 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: super1-postgres
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpassword
+      POSTGRES_DB: super1_db
+    ports:
+      - "5435:5435"
