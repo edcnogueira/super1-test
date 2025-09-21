@@ -6,6 +6,7 @@
 	"scripts": {
 		"dev": "bun --hot index.ts",
 		"start": "bun run index.ts",
+		"test": "NODE_ENV=test bun test",
 		"db:generate": "bun --env-file .env --bun drizzle-kit generate",
 		"db:migrate": "bun --env-file .env --bun drizzle-kit migrate"
 	},

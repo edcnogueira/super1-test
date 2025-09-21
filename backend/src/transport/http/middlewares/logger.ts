@@ -3,6 +3,10 @@ import Elysia from "elysia";
 export function logger() {
 	const startTimes = new WeakMap<Request, number>();
 
+	if (import.meta.env.NODE_ENV === "test") {
+		return new Elysia({ name: "logger" });
+	}
+
 	return new Elysia({ name: "logger" })
 		.onBeforeHandle(({ request, set, path }) => {
 			const correlationId =
