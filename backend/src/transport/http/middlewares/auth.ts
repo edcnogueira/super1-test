@@ -1,40 +1,51 @@
 import Elysia from "elysia";
+import { env } from "@/config/env.ts";
+import { createJwtManager } from "@/providers/jwtmanager/provider.ts";
 
 export type AuthIdentity = {
 	userId: string;
-	roles: string[];
-} | null;
+	email?: string;
+	name?: string;
+	claims: Record<string, unknown>;
+};
 
-export function authOptional() {
-	return new Elysia({ name: "authOptional" }).derive(({ request }) => {
-		const auth = request.headers.get("authorization");
-		let identity: AuthIdentity = null;
-		if (auth?.startsWith("Bearer ")) {
-			const token = auth.slice("Bearer ".length).trim();
-			identity = { userId: token || "anonymous", roles: [] };
-		}
-		return { identity };
+export function auth() {
+	const jwt = createJwtManager({
+		secret: env.JWT_SECRET || "dev-secret",
+		issuer: env.JWT_ISSUER || "super1",
+		audience: env.JWT_AUDIENCE || "user_provider",
 	});
-}
 
-export function requireAuth() {
-	return new Elysia({ name: "requireAuth" })
-		.onBeforeHandle(({ request, set }) => {
-			const auth = request.headers.get("authorization");
-			if (!auth || !auth.startsWith("Bearer ")) {
-				set.status = 401;
-				return { code: "unauthorized", message: "Unauthorized" };
-			}
-		})
-		.derive(({ request }) => {
-			const token = request.headers
-				.get("authorization")
-				?.slice("Bearer ".length)
-				.trim();
+	return new Elysia({ name: "auth" }).derive(async ({ request, set }) => {
+		const authz = request.headers.get("authorization") ?? "";
+		const token = authz.startsWith("Bearer ") ? authz.substring(7) : null;
+
+		if (!token) {
+			set.status = 401;
+			throw Object.assign(new Error("Missing Authorization header"), {
+				code: "UNAUTHORIZED_ERROR",
+			});
+		}
+
+		try {
+			const { payload } = await jwt.verify(
+				{ correlationId: set.headers?.["x-correlation-id"]?.toString() },
+				{ token },
+			);
+
 			const identity: AuthIdentity = {
-				userId: token || "anonymous",
-				roles: [],
+				userId: String(payload.sub ?? ""),
+				email: typeof payload.email === "string" ? payload.email : undefined,
+				name: typeof payload.name === "string" ? payload.name : undefined,
+				claims: payload as unknown as Record<string, unknown>,
 			};
+
 			return { identity };
-		});
+		} catch (_err) {
+			set.status = 401;
+			throw Object.assign(new Error("Invalid token"), {
+				code: "UNAUTHORIZED_ERROR",
+			});
+		}
+	});
 }

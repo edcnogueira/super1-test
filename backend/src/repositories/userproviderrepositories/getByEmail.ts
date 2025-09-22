@@ -8,7 +8,10 @@ export type GetByEmailRequest = {
 	email: string;
 };
 export type GetByEmailResponse = {
-	userProvider: Pick<UserProvider, "id" | "email"> | null;
+	userProvider: Pick<
+		UserProvider,
+		"id" | "email" | "passwordHash" | "name"
+	> | null;
 };
 
 export async function getUserProviderByEmail(
@@ -18,7 +21,12 @@ export async function getUserProviderByEmail(
 ): Promise<GetByEmailResponse> {
 	try {
 		const [row] = await db
-			.select({ id: schema.userProviders.id, email: schema.userProviders.email })
+			.select({
+				id: schema.userProviders.id,
+				email: schema.userProviders.email,
+				passwordHash: schema.userProviders.passwordHash,
+				name: schema.userProviders.name,
+			})
 			.from(schema.userProviders)
 			.where(eq(schema.userProviders.email, req.email))
 			.limit(1);

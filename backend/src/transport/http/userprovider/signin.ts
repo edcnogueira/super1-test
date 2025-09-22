@@ -1,45 +1,40 @@
 import { z } from "zod";
 import {
-	ConflictError,
+	UnauthorizedError,
 	ValidationError,
 } from "@/services/userproviderservice/erros.ts";
 import type { Service } from "@/services/userproviderservice/service.ts";
 
 type ElysiaRequest = { request: Request; body: any; set: any };
 
-type CreateUserRequest = {
+type SigninUserRequest = {
 	service: Service;
 } & ElysiaRequest;
 
-export async function create({
+export async function signin({
 	request,
 	body,
 	set,
 	service,
-}: CreateUserRequest) {
+}: SigninUserRequest) {
 	try {
 		const correlationId = request.headers.get("x-correlation-id") ?? undefined;
 
-		const res = await service.create(
+		const res = await service.signin(
 			{ correlationId },
 			{
 				email: body.email,
 				password: body.password,
-				name: body.name,
-				phone: body.phone ?? null,
 			},
 		);
 
-		set.status = 201;
+		set.status = 200;
 		return {
 			token: res.token,
 			user_provider: {
 				id: res.userProvider.id,
 				email: res.userProvider.email,
 				name: res.userProvider.name,
-				phone: res.userProvider.phone ?? null,
-				created_at: res.userProvider.createdAt,
-				updated_at: res.userProvider.updatedAt,
 			},
 		};
 	} catch (err) {
@@ -51,8 +46,8 @@ export async function create({
 				details: err.details,
 			};
 		}
-		if (err instanceof ConflictError) {
-			set.status = 409;
+		if (err instanceof UnauthorizedError) {
+			set.status = 401;
 			return {
 				code: err.code,
 				message: err.message,
@@ -67,25 +62,20 @@ export async function create({
 export const documentation = {
 	detail: {
 		tags: ["UserProviders"],
-		summary: "Create user provider",
-		description: "Creates a new user provider",
+		summary: "Signin user provider",
+		description: "Authenticates a user provider and returns a JWT token",
 	},
 	body: z.object({
 		email: z.string().describe("Email address"),
 		password: z.string().describe("Plain password (min 8 chars)"),
-		name: z.string().describe("Full name"),
-		phone: z.string().describe("Phone number").nullable().optional(),
 	}),
 	response: {
-		201: z.object({
+		200: z.object({
 			token: z.string(),
 			user_provider: z.object({
 				id: z.string(),
 				email: z.string(),
 				name: z.string(),
-				phone: z.string().nullable(),
-				created_at: z.date().nullable(),
-				updated_at: z.date().nullable(),
 			}),
 		}),
 		400: z.object({
@@ -93,13 +83,10 @@ export const documentation = {
 			message: z.string(),
 			details: z.array(z.object({ field: z.string(), message: z.string() })),
 		}),
-		409: z.object({
-			code: z.literal("CONFLICT_ERROR"),
+		401: z.object({
+			code: z.literal("UNAUTHORIZED_ERROR"),
 			message: z.string(),
 		}),
-		500: z.object({
-			code: z.literal("INTERNAL_ERROR"),
-			message: z.string(),
-		}),
+		500: z.object({ code: z.literal("INTERNAL_ERROR"), message: z.string() }),
 	},
 };
