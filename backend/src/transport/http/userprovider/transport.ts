@@ -4,7 +4,8 @@ import { createJwtManager } from "@/providers/jwtmanager/provider.ts";
 import { Database } from "@/repositories/drizzle/client.ts";
 import { DrizzleUserProviderRepository } from "@/repositories/userproviderrepositories/repository.ts";
 import { UserProviderService } from "@/services/userproviderservice/service.ts";
-import { create, documentation } from "./create.ts";
+import { create, documentation as sinupDoc } from "./create.ts";
+import { signin, documentation as signinDoc } from "./signin.ts";
 
 export function registerUserProviderTransport(app: AnyElysia) {
 	const db = Database.instance;
@@ -21,7 +22,12 @@ export function registerUserProviderTransport(app: AnyElysia) {
 		api.post(
 			"/signup",
 			async ({ request, body, set }) => create({ request, body, set, service }),
-			documentation,
+			sinupDoc,
+		);
+		api.post(
+			"/signin",
+			async ({ request, body, set }) => signin({ request, body, set, service }),
+			signinDoc,
 		);
 		return api;
 	});

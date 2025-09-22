@@ -16,3 +16,11 @@ export class ConflictError extends Error {
 		this.name = "ConflictError";
 	}
 }
+
+export class UnauthorizedError extends Error {
+	readonly code = "UNAUTHORIZED_ERROR" as const;
+	constructor(message: string) {
+		super(message);
+		this.name = "UnauthorizedError";
+	}
+}
