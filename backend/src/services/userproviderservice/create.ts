@@ -4,7 +4,10 @@ import type {
 	CreateResponse as RepoCreateResponse,
 } from "@/repositories/userproviderrepositories/create.ts";
 import type { UserProviderRepository } from "@/repositories/userproviderrepositories/repository.ts";
-import { ValidationError } from "@/services/userproviderservice/erros.ts";
+import {
+	ConflictError,
+	ValidationError,
+} from "@/services/userproviderservice/erros.ts";
 import type { ServiceContext } from "@/services/userproviderservice/service.ts";
 
 export type CreateRequest = {
@@ -33,6 +36,15 @@ export async function createUserProvider(
 	validateCreateRequest(req);
 
 	try {
+		const { userProvider: existing } = await repository.getByEmail(
+			{ correlationId: ctx.correlationId },
+			{ email: req.email },
+		);
+
+		if (existing) {
+			throw new ConflictError("Email already exists");
+		}
+
 		const passwordHashed = await Bun.password.hash(req.password);
 
 		const repoReq: RepoCreateRequest = {
@@ -58,7 +70,7 @@ export async function createUserProvider(
 			},
 		} satisfies CreateResponse;
 	} catch (err) {
-		if (err instanceof ValidationError) {
+		if (err instanceof ValidationError || err instanceof ConflictError) {
 			throw err;
 		}
 		const message = err instanceof Error ? err.message : String(err);

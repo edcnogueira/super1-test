@@ -54,4 +54,21 @@ describe("UserProvider - signup", () => {
 			message: "Name must have at least 2 characters",
 		});
 	});
+
+	it("returns 409 when email already exists", async () => {
+		const payload = {
+			email: "dup.user@example.com",
+			password: "supersecret",
+			name: "Dup User",
+			phone: "+5511999999999",
+		};
+
+		const first = await signup(app, payload);
+		expect(first.status).toBe(201);
+
+		const second = await signup(app, payload);
+		expect(second.status).toBe(409);
+		expect(second.body.code).toBe("CONFLICT_ERROR");
+		expect(second.body.message).toBe("Email already exists");
+	});
 });
