@@ -29,6 +29,7 @@ export async function create({
 
 		set.status = 201;
 		return {
+			token: res.token,
 			user_provider: {
 				id: res.userProvider.id,
 				email: res.userProvider.email,
@@ -74,6 +75,7 @@ export const documentation = {
 	}),
 	response: {
 		201: z.object({
+			token: z.string(),
 			user_provider: z.object({
 				id: z.string(),
 				email: z.string(),

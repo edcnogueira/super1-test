@@ -1,4 +1,5 @@
 import { ZodError, z } from "zod";
+import type { JwtManager } from "@/providers/jwtmanager/provider.ts";
 import type {
 	CreateRequest as RepoCreateRequest,
 	CreateResponse as RepoCreateResponse,
@@ -26,10 +27,12 @@ export type CreateResponse = {
 		createdAt: Date | null;
 		updatedAt: Date | null;
 	};
+	token: string;
 };
 
 export async function createUserProvider(
 	repository: UserProviderRepository,
+	jwt: JwtManager,
 	ctx: ServiceContext,
 	req: CreateRequest,
 ) {
@@ -59,6 +62,17 @@ export async function createUserProvider(
 			repoReq,
 		);
 
+		const { token } = await jwt.sign(
+			{ correlationId: ctx.correlationId },
+			{
+				subject: repoRes.userProvider.id,
+				claims: {
+					email: repoRes.userProvider.email,
+					name: repoRes.userProvider.name,
+				},
+			},
+		);
+
 		return {
 			userProvider: {
 				id: repoRes.userProvider.id,
@@ -68,6 +82,7 @@ export async function createUserProvider(
 				createdAt: repoRes.userProvider.createdAt ?? null,
 				updatedAt: repoRes.userProvider.updatedAt ?? null,
 			},
+			token,
 		} satisfies CreateResponse;
 	} catch (err) {
 		if (err instanceof ValidationError || err instanceof ConflictError) {
