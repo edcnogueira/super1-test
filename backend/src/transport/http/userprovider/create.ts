@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ValidationError } from "@/services/userproviderservice/erros.ts";
+import { ConflictError, ValidationError } from "@/services/userproviderservice/erros.ts";
 import type { Service } from "@/services/userproviderservice/service.ts";
 
 type ElysiaRequest = { request: Request; body: any; set: any };
@@ -29,6 +29,7 @@ export async function create({
 
 		set.status = 201;
 		return {
+			token: res.token,
 			user_provider: {
 				id: res.userProvider.id,
 				email: res.userProvider.email,
@@ -45,6 +46,13 @@ export async function create({
 				code: err.code,
 				message: err.message,
 				details: err.details,
+			};
+		}
+		if (err instanceof ConflictError) {
+			set.status = 409;
+			return {
+				code: err.code,
+				message: err.message,
 			};
 		}
 		const message = err instanceof Error ? err.message : String(err);
@@ -67,6 +75,7 @@ export const documentation = {
 	}),
 	response: {
 		201: z.object({
+			token: z.string(),
 			user_provider: z.object({
 				id: z.string(),
 				email: z.string(),
@@ -80,6 +89,10 @@ export const documentation = {
 			code: z.literal("VALIDATION_ERROR"),
 			message: z.string(),
 			details: z.array(z.object({ field: z.string(), message: z.string() })),
+		}),
+		409: z.object({
+			code: z.literal("CONFLICT_ERROR"),
+			message: z.string(),
 		}),
 		500: z.object({
 			code: z.literal("INTERNAL_ERROR"),

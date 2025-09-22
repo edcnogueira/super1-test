@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "bun:test";
+import { decodeJwt } from "jose";
 import { buildTestApp } from "../../testhelpers/api/app.ts";
 import { signup } from "../../testhelpers/api/userprovider.ts";
 import { truncateUserProviders } from "../../testhelpers/database/cleanup.ts";
@@ -25,6 +26,12 @@ describe("UserProvider - signup", () => {
 		expect(res.body.user_provider.email).toBe(payload.email);
 		expect(res.body.user_provider.name).toBe(payload.name);
 		expect(res.body.user_provider.phone).toBe(payload.phone);
+
+		expect(res.body.token).toBeString();
+		const decoded = decodeJwt(res.body.token);
+		expect(decoded.sub).toBe(res.body.user_provider.id);
+		expect(decoded.email).toBe(payload.email);
+		expect(decoded.name).toBe(payload.name);
 	});
 
 	it("fails with 400 when payload is invalid (short password)", async () => {
@@ -53,5 +60,22 @@ describe("UserProvider - signup", () => {
 			field: "name",
 			message: "Name must have at least 2 characters",
 		});
+	});
+
+	it("returns 409 when email already exists", async () => {
+		const payload = {
+			email: "dup.user@example.com",
+			password: "supersecret",
+			name: "Dup User",
+			phone: "+5511999999999",
+		};
+
+		const first = await signup(app, payload);
+		expect(first.status).toBe(201);
+
+		const second = await signup(app, payload);
+		expect(second.status).toBe(409);
+		expect(second.body.code).toBe("CONFLICT_ERROR");
+		expect(second.body.message).toBe("Email already exists");
 	});
 });

@@ -4,6 +4,7 @@ import {
 	type CreateResponse,
 	createUserProvider,
 } from "@/services/userproviderservice/create.ts";
+import type { JwtManager } from "@/providers/jwtmanager/provider.ts";
 
 export type ServiceContext = {
 	correlationId?: string;
@@ -15,15 +16,17 @@ export interface Service {
 
 export class UserProviderService implements Service {
 	private readonly repository: UserProviderRepository;
+	private readonly jwt: JwtManager;
 
-	constructor(repository: UserProviderRepository) {
+	constructor(repository: UserProviderRepository, jwt: JwtManager) {
 		this.repository = repository;
+		this.jwt = jwt;
 	}
 
 	async create(
 		ctx: ServiceContext,
 		req: CreateRequest,
 	): Promise<CreateResponse> {
-		return createUserProvider(this.repository, ctx, req);
+		return createUserProvider(this.repository, this.jwt, ctx, req);
 	}
 }

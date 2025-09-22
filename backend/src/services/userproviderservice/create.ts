@@ -1,10 +1,14 @@
 import { ZodError, z } from "zod";
+import type { JwtManager } from "@/providers/jwtmanager/provider.ts";
 import type {
 	CreateRequest as RepoCreateRequest,
 	CreateResponse as RepoCreateResponse,
 } from "@/repositories/userproviderrepositories/create.ts";
 import type { UserProviderRepository } from "@/repositories/userproviderrepositories/repository.ts";
-import { ValidationError } from "@/services/userproviderservice/erros.ts";
+import {
+	ConflictError,
+	ValidationError,
+} from "@/services/userproviderservice/erros.ts";
 import type { ServiceContext } from "@/services/userproviderservice/service.ts";
 
 export type CreateRequest = {
@@ -23,16 +27,27 @@ export type CreateResponse = {
 		createdAt: Date | null;
 		updatedAt: Date | null;
 	};
+	token: string;
 };
 
 export async function createUserProvider(
 	repository: UserProviderRepository,
+	jwt: JwtManager,
 	ctx: ServiceContext,
 	req: CreateRequest,
 ) {
 	validateCreateRequest(req);
 
 	try {
+		const { userProvider: existing } = await repository.getByEmail(
+			{ correlationId: ctx.correlationId },
+			{ email: req.email },
+		);
+
+		if (existing) {
+			throw new ConflictError("Email already exists");
+		}
+
 		const passwordHashed = await Bun.password.hash(req.password);
 
 		const repoReq: RepoCreateRequest = {
@@ -47,6 +62,17 @@ export async function createUserProvider(
 			repoReq,
 		);
 
+		const { token } = await jwt.sign(
+			{ correlationId: ctx.correlationId },
+			{
+				subject: repoRes.userProvider.id,
+				claims: {
+					email: repoRes.userProvider.email,
+					name: repoRes.userProvider.name,
+				},
+			},
+		);
+
 		return {
 			userProvider: {
 				id: repoRes.userProvider.id,
@@ -56,9 +82,10 @@ export async function createUserProvider(
 				createdAt: repoRes.userProvider.createdAt ?? null,
 				updatedAt: repoRes.userProvider.updatedAt ?? null,
 			},
+			token,
 		} satisfies CreateResponse;
 	} catch (err) {
-		if (err instanceof ValidationError) {
+		if (err instanceof ValidationError || err instanceof ConflictError) {
 			throw err;
 		}
 		const message = err instanceof Error ? err.message : String(err);

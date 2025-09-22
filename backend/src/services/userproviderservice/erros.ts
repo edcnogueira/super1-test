@@ -8,3 +8,11 @@ export class ValidationError extends Error {
 		this.name = "ValidationError";
 	}
 }
+
+export class ConflictError extends Error {
+	readonly code = "CONFLICT_ERROR" as const;
+	constructor(message: string) {
+		super(message);
+		this.name = "ConflictError";
+	}
+}
