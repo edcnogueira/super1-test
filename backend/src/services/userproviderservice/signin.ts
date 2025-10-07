@@ -1,10 +1,7 @@
 import { ZodError, z } from "zod";
+import { UnauthorizedError, ValidationError } from "@/domain/erros.ts";
 import type { JwtManager } from "@/providers/jwtmanager/provider.ts";
 import type { UserProviderRepository } from "@/repositories/userproviderrepositories/repository.ts";
-import {
-	UnauthorizedError,
-	ValidationError,
-} from "@/services/userproviderservice/erros.ts";
 import type { ServiceContext } from "@/services/userproviderservice/service.ts";
 
 export type SigninRequest = {

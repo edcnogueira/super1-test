@@ -1,5 +1,6 @@
 import type { AnyElysia } from "elysia";
 import { z } from "zod";
+import { registerProviderTransport } from "@/transport/http/provider/transport.ts";
 import { registerUserProviderTransport } from "@/transport/http/userprovider/transport.ts";
 
 export function registerRoutes(app: AnyElysia) {
@@ -10,6 +11,7 @@ export function registerRoutes(app: AnyElysia) {
 
 	app.group("/api", (api) => {
 		registerUserProviderTransport(api);
+		registerProviderTransport(api);
 		return api;
 	});
 

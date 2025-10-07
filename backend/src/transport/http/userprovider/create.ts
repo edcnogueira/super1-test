@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-	ConflictError,
-	ValidationError,
-} from "@/services/userproviderservice/erros.ts";
+import { ConflictError, ValidationError } from "@/domain/erros.ts";
 import type { Service } from "@/services/userproviderservice/service.ts";
 
 type ElysiaRequest = { request: Request; body: any; set: any };

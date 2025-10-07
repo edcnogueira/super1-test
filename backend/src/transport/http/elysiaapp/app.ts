@@ -19,6 +19,45 @@ export function createApp(_: AppConfig) {
 			}),
 		)
 		.onError(({ code, error, set }) => {
+			// Prefer domain-style error codes when available
+			const err: any = error;
+			if (err && typeof err.code === "string") {
+				const domainCode = err.code as string;
+				switch (domainCode) {
+					case "VALIDATION_ERROR":
+						set.status = 400;
+						return {
+							code: domainCode,
+							message: error?.message,
+							details: err.details,
+						} satisfies ErrorPayload;
+					case "NOT_FOUND_ERROR":
+						set.status = 404;
+						return {
+							code: domainCode,
+							message: error?.message,
+						} satisfies ErrorPayload;
+					case "UNAUTHORIZED_ERROR":
+						set.status = 401;
+						return {
+							code: domainCode,
+							message: error?.message,
+						} satisfies ErrorPayload;
+					case "CONFLICT_ERROR":
+						set.status = 409;
+						return {
+							code: domainCode,
+							message: error?.message,
+						} satisfies ErrorPayload;
+					default:
+						set.status = 500;
+						return {
+							code: domainCode,
+							message: error?.message,
+						} satisfies ErrorPayload;
+				}
+			}
+
 			const payload: ErrorPayload = {
 				code: (code as string) ?? "internal_error",
 				message:
@@ -31,7 +70,7 @@ export function createApp(_: AppConfig) {
 				case "VALIDATION":
 					set.status = 400;
 					payload.code = "validation_error";
-					payload.details = error?.cause ?? undefined;
+					payload.details = err?.cause ?? undefined;
 					break;
 				case "NOT_FOUND":
 					set.status = 404;
