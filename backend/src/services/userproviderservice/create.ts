@@ -1,14 +1,11 @@
 import { ZodError, z } from "zod";
+import { ConflictError, ValidationError } from "@/domain/erros.ts";
 import type { JwtManager } from "@/providers/jwtmanager/provider.ts";
 import type {
 	CreateRequest as RepoCreateRequest,
 	CreateResponse as RepoCreateResponse,
 } from "@/repositories/userproviderrepositories/create.ts";
 import type { UserProviderRepository } from "@/repositories/userproviderrepositories/repository.ts";
-import {
-	ConflictError,
-	ValidationError,
-} from "@/services/userproviderservice/erros.ts";
 import type { ServiceContext } from "@/services/userproviderservice/service.ts";
 
 export type CreateRequest = {

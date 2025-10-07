@@ -3,6 +3,7 @@ import { env } from "@/config/env.ts";
 import { createJwtManager } from "@/providers/jwtmanager/provider.ts";
 
 export type AuthIdentity = {
+	type: "auth";
 	userId: string;
 	email?: string;
 	name?: string;
@@ -16,7 +17,7 @@ export function auth() {
 		audience: env.JWT_AUDIENCE || "user_provider",
 	});
 
-	return new Elysia({ name: "auth" }).derive(async ({ request, set }) => {
+	return new Elysia({ name: "auth" }).resolve(async ({ request, set }) => {
 		const authz = request.headers.get("authorization") ?? "";
 		const token = authz.startsWith("Bearer ") ? authz.substring(7) : null;
 
@@ -29,11 +30,12 @@ export function auth() {
 
 		try {
 			const { payload } = await jwt.verify(
-				{ correlationId: set.headers?.["x-correlation-id"]?.toString() },
+				{ correlationId: crypto.randomUUID() },
 				{ token },
 			);
 
 			const identity: AuthIdentity = {
+				type: "auth",
 				userId: String(payload.sub ?? ""),
 				email: typeof payload.email === "string" ? payload.email : undefined,
 				name: typeof payload.name === "string" ? payload.name : undefined,

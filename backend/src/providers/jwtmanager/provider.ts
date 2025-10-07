@@ -129,6 +129,7 @@ export function createJwtManager(config: JwtManagerConfig): JwtManager {
 		},
 
 		async verify(_ctx, req) {
+			console.log("Verifying token:", req.token);
 			try {
 				const { payload } = await jwtVerify(req.token, key, {
 					algorithms: [algorithm],
