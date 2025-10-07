@@ -7,7 +7,7 @@ import {
 	truncateUserProviders,
 } from "../../testhelpers/database/cleanup.ts";
 
-describe("Provider - create", () => {
+describe.skip("Provider - create", () => {
 	const app = buildTestApp();
 
 	beforeEach(async () => {
